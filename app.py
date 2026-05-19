@@ -3,7 +3,7 @@ import io
 import wave
 from PIL import Image, ImageDraw
 import imagehash
-from crypto.hash_utils import compute_sha256
+from crypto.hash_utils import compute_phash, compute_sha256
 from crypto.signature_utils import (
     generate_key_pair,
     serialize_private_key,
@@ -17,13 +17,6 @@ from crypto.signature_utils import (
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024
 
-
-def compute_phash(file_bytes: bytes) -> str:
-    try:
-        img = Image.open(io.BytesIO(file_bytes))
-        return str(imagehash.phash(img))
-    except Exception:
-        return None
 
 @app.route("/")
 def index():
