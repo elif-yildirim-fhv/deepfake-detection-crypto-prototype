@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deepfake-Schutz – Kryptografischer Prototyp</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Kryptografischer Schutz digitaler Medien</h1>
+    <p class="subtitle">SHA-256 Hashing &amp; Digitale Signaturen – Prototyp gegen Deepfake-Manipulation</p>
+  </header>
+
+  <main>
+    <section class="card" id="section-keys">
+      <h2><span class="step">1</span> Schlüsselpaar generieren</h2>
+      <p>Erstelle ein RSA-2048 Schlüsselpaar. Der Private Key signiert Dateien, der Public Key verifiziert.</p>
+      <button id="btn-generate-keys">Schlüsselpaar generieren</button>
+      <div id="keys-output" class="hidden">
+        <div class="key-block">
+          <label>Private Key <span class="warn">(geheim halten!)</span></label>
+          <textarea id="private-key" rows="8" readonly></textarea>
+          <button class="btn-copy" data-target="private-key">Kopieren</button>
+        </div>
+        <div class="key-block">
+          <label>Public Key <span class="info">(weitergeben)</span></label>
+          <textarea id="public-key" rows="6" readonly></textarea>
+          <button class="btn-copy" data-target="public-key">Kopieren</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="section-sign">
+      <h2><span class="step">2</span> Datei signieren</h2>
+      <p>Lade eine Mediendatei hoch und signiere sie mit deinem Private Key.</p>
+      <div class="form-group">
+        <label>Mediendatei auswählen <span class="media-hint">(Bild, Audio .wav, Video)</span></label>
+        <input type="file" id="sign-file" accept="image/*,audio/wav,video/*" />
+        <div id="sign-file-info" class="file-type-badge hidden"></div>
+      </div>
+      <div class="form-group">
+        <label>Private Key (PEM)</label>
+        <textarea id="sign-private-key" rows="6" placeholder="-----BEGIN PRIVATE KEY-----&#10;..."></textarea>
+      </div>
+      <button id="btn-sign">Datei signieren</button>
+      <div id="sign-result" class="hidden result-box">
+        <h3>Ergebnis</h3>
+        <div class="result-row">
+          <span class="label">Dateiname:</span>
+          <span id="sign-filename"></span>
+        </div>
+        <div class="result-row">
+          <span class="label">SHA-256 Hash:</span>
+          <code id="sign-hash"></code>
+          <button class="btn-copy-inline" data-target="sign-hash">Kopieren</button>
+        </div>
+        <div class="result-row" id="sign-phash-row" style="display: none;">
+          <span class="label">Visueller Hash (pHash):</span>
+          <code id="sign-phash"></code>
+          <button class="btn-copy-inline" data-target="sign-phash">Kopieren</button>
+        </div>
+        <div class="result-row">
+          <span class="label">Digitale Signatur:</span>
+          <textarea id="sign-signature" rows="4" readonly></textarea>
+          <button class="btn-copy" data-target="sign-signature">Kopieren</button>
+        </div>
+        <p class="hint">Speichere Hash und Signatur für die spätere Verifikation.</p>
+        <div class="tamper-demo">
+          <p class="hint warn">Angriffssimulation (Red Team): Teste das System gegen verschiedene Manipulationen.</p>
+          <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <select id="tamper-type" style="flex: 1; padding: 8px;">
+              <option value="pixel">Minimal (1 Pixel geändert)</option>
+              <option value="harmless">Harmlos (Qualität reduziert)</option>
+              <option value="deepfake">Deepfake (Inhalt manipuliert)</option>
+            </select>
+            <button id="btn-tamper" class="btn-danger">Manipulieren &amp; Download</button>
+          </div>
+          <div id="tamper-method" class="hidden tamper-method-info"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="section-verify">
+      <h2><span class="step">3</span> Integrität &amp; Signatur prüfen</h2>
+      <p>Überprüfe, ob eine Datei seit der Signierung verändert wurde.</p>
+      <div class="form-group">
+        <label>Datei auswählen (Original oder potenziell manipuliert)</label>
+        <input type="file" id="verify-file" accept="image/*,audio/*,video/*,.pdf" />
+      </div>
+      <div class="form-group">
+        <label>Public Key (PEM)</label>
+        <textarea id="verify-public-key" rows="6" placeholder="-----BEGIN PUBLIC KEY-----&#10;..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Originaler SHA-256 Hash</label>
+        <input type="text" id="verify-hash" placeholder="a3f5c2..." />
+      </div>
+      <div class="form-group" id="verify-phash-group" style="display: none;">
+        <label>Originaler Visueller Hash (pHash) <span class="info">- nur für Bilder</span></label>
+        <input type="text" id="verify-phash" placeholder="z.B. a3f5c2..." />
+      </div>
+      <div class="form-group">
+        <label>Digitale Signatur (Base64)</label>
+        <textarea id="verify-signature" rows="4" placeholder="Base64-kodierte Signatur..."></textarea>
+      </div>
+      <button id="btn-verify">Prüfen</button>
+      <div id="verify-result" class="hidden result-box">
+        <h3>Prüfergebnis</h3>
+        <div id="verdict" class="verdict"></div>
+        <div class="result-details">
+          <div class="result-row">
+            <span class="label">Originaler Hash:</span>
+            <code id="verify-original-hash"></code>
+          </div>
+          <div class="result-row">
+            <span class="label">Aktueller Hash:</span>
+            <code id="verify-current-hash"></code>
+          </div>
+          <div class="result-row">
+            <span class="label">Integrität:</span>
+            <span id="verify-integrity"></span>
+          </div>
+          <div class="result-row" id="verify-phash-row" style="display: none;">
+            <span class="label">Visuelle Integrität (pHash):</span>
+            <span id="verify-phash-status"></span>
+          </div>
+          <div class="result-row">
+            <span class="label">Signatur:</span>
+            <span id="verify-sig-status"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>Bachelorarbeit – Elif Yildirim – FH Vorarlberg – Kryptografische Verfahren zur Absicherung gegen Deepfakes</p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

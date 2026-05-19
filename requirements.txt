@@ -1,0 +1,4 @@
+flask==3.0.3
+cryptography==42.0.8
+Pillow==10.4.0
+ImageHash==4.3.1
